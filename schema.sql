@@ -12,3 +12,9 @@ CREATE TABLE todos (
   REFERENCES todolists(id)
   ON DELETE CASCADE
 );
+
+
+CREATE TABLE users (
+  username TEXT PRIMARY KEY,
+  password TEXT NOT NULL
+);
