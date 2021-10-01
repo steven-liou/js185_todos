@@ -5,6 +5,7 @@ const session = require('express-session');
 const {body, validationResult} = require('express-validator');
 const store = require('connect-loki');
 const PgPersistence = require('./lib/pg-persistence');
+const catchError = require('./lib/catch-error');
 
 const app = express();
 const host = 'localhost';
@@ -54,8 +55,9 @@ app.get('/', (req, res) => {
 });
 
 // Render the list of todo lists
-app.get('/lists', async (req, res, next) => {
-  try {
+app.get(
+  '/lists',
+  catchError(async (req, res, next) => {
     let store = res.locals.store;
     let todoLists = await store.sortedTodoLists();
 
@@ -70,10 +72,8 @@ app.get('/lists', async (req, res, next) => {
       todoLists,
       todosInfo,
     });
-  } catch (error) {
-    next(error);
-  }
-});
+  })
+);
 
 // Render new todo list page
 app.get('/lists/new', (req, res) => {
@@ -116,13 +116,14 @@ app.post(
 );
 
 // Render individual todo list and its todos
-app.get('/lists/:todoListId', async (req, res, next) => {
-  try {
+app.get(
+  '/lists/:todoListId',
+  catchError(async (req, res, next) => {
     let todoListId = req.params.todoListId;
     let todoList = await res.locals.store.loadTodoList(+todoListId);
 
     if (todoList === undefined) {
-      next(new Error('Not Found.'));
+      throw new Error('Not Found.');
     } else {
       todoList.todos = await res.locals.store.sortedTodos(todoList);
       res.render('list', {
@@ -131,10 +132,8 @@ app.get('/lists/:todoListId', async (req, res, next) => {
         todoList: todoList,
       });
     }
-  } catch (error) {
-    next(error);
-  }
-});
+  })
+);
 
 // Toggle completion status of a todo
 app.post('/lists/:todoListId/todos/:todoId/toggle', (req, res, next) => {
